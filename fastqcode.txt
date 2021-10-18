@@ -1,14 +1,10 @@
-#get RNA-seq files first from provided location
-#direct to the localdisk
-cd ../..
-#copy files from inexecutable directo
-cp -r data/BPSM/AY21/fastq ~/assignment1 
-#enter to the directory where all RNA-seq files are
-cd ~/assignment1/fastq
-
+#making a directory for this assignment
+mkdir assignment1
+#working on assignment1 directory for this assignment
+cd assignment1
 #use fastqc to check the quality of illumina sequencing results
 #unzip and integrate the 45 RNA-seq files to one file for output one fastqc report
-zcat *.fq.gz > allsample.fq  
+zcat /localdisk/data/BPSM/AY21/fastq/*.fq.gz > allsample.fq  
 #fastqc with 4 threads
 fastqc -t 4 allsample.fq
 #the output fastqc report in html can be downloaded through graphical user interface
