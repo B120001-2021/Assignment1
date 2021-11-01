@@ -13,14 +13,12 @@ zcat /localdisk/data/BPSM/AY21/fastq/*.fq.gz > allsample.fq
 fastqc -t 4 allsample.fq
 
 #Assessment of the number and quality of the raw sequence
-unzip allsample.fq.zip
-cd allsample.fq
+unzip -q -o allsample_fastqc.zip
+cd allsample_fastqc 
 echo "The number of analyzed reads: `grep "Total Sequences" fastqc_data.txt`"
 echo "The quality of raw RNA-seq: `grep "Sequences flagged as poor quality" fastqc_data.txt`"
 echo "Modules that did not pass FastQC are: `grep -v "PASS" summary.txt | cut -f 1,2`" 
 echo "Modules that passed FastQC are: `grep "PASS" summary.txt | cut -f 1,2`"
-
-cd assignment1
 
 echo "After viewing the fastqc report, please press control & C to quit."
 firefox *.html #there would be a report in html after fastqc and can be oepn with firefox
@@ -35,9 +33,10 @@ while true; do
     esac
 done
 
-rm allsample*
-
 echo "Good choice. Hello again~"
+
+cd ~/assignment1
+rm -r allsample_fastqc 
 
 #align the forward and reverse reads with bowtie2
 #extract referencegene for reads alignment
@@ -52,8 +51,6 @@ bowtie2 -x referencegene -1 /localdisk/data/BPSM/AY21/fastq/${name}_1.fq.gz -2 /
 done
 echo "Sequence of each sample has been aligned with bowtie2 and sorted by samtools"
 
-rm reference* #remove the indexed referencegene for alignments because we don't need it anymore
-
 #construct indexed bam file
 for i in *sort.bam
 do
@@ -63,8 +60,6 @@ done
 
 #generate gene counts data for each bam file with provided reference genotype information
 bedtools multicov -bams *sort.bam -bed /localdisk/data/BPSM/AY21/TriTrypDB-46_TcongolenseIL3000_2019.bed > countreads
-
-rm *.bam *.bai
 
 #generate a plain text file of average gene counts for each group
 awk '{FS="\t";OFS="\t";}{print $4,($6+$9+$12)/3,($15+$17+$19)/3,($16+$18+$20)/3,($7+$10+$13)/3,($8+$11+$14)/3,($21+$24+$27)/3,($30+$32+$34)/3,($31+$33+$35)/3,($22+$25+$28)/3,($23+$26+$29)/3,($36+$39+$42)/3,($45+$47+$49)/3,($46+$48+$50)/3,($37+$40+$43)/3,($38+$41+$44)/3, $5;}' countreads > averagecounts
@@ -121,6 +116,13 @@ awk '{FS="\t";OFS="\t";} NR>=2{print $14,$12,log(($14+0.000000001)/($12+0.000000
 paste time_unWT_1 time_unWT_2 > time_unWT
 awk 'BEGIN{print "Gene\tWT_24_uninduced\tWT_0_uninduced\tLogFC240\tWT_48_uninduced\tWT_0_uninduced\tLogFC480"}1' time_unWT >> time_unWT.txt
 
+#For analyzing effect of time in WT with treatment
+awk '{FS="\t";OFS="\t";} NR>=2{print $1,$15,$12,log(($15+0.000000001)/($12+0.000000001))/log(2);}' averagecounts.txt > time_inWT_1 #4
+awk '{FS="\t";OFS="\t";} NR>=2{print $16,$12,log(($16+0.000000001)/($12+0.000000001))/log(2);}' averagecounts.txt > time_inWT_2 #7
+paste time_inWT_1 time_inWT_2 > time_inWT
+awk 'BEGIN{print "Gene\tWT_24_induced\tWT_0_uninduced\tLogFC240\tWT_48_induced\tWT_0_uninduced\tLogFC480"}1' time_inWT >> time_inWT.txt
+
+
 #For analyzing effect of time in clone1 without treatment
 awk '{FS="\t";OFS="\t";} NR>=2{print $1,$3,$2,log(($3+0.000000001)/($2+0.000000001))/log(2);}' averagecounts.txt > time_unC1_1 #4
 awk '{FS="\t";OFS="\t";} NR>=2{print $4,$2,log(($4+0.000000001)/($2+0.000000001))/log(2);}' averagecounts.txt > time_unC1_2 #7
@@ -158,3 +160,5 @@ echo "Number of genes that is signficantly inhibited in clone1 at time 24 is `aw
 echo "Number of genes that is signficantly inhibited in clone1 at time 48 is `awk '{FS="\t"; if($4 <= -2){print $0;}}' strain_unC1toWT.txt | wc -l` "
 echo "Please refer the PDF for more information"
 #other data was obatined by a same silly way that is not shown in here for saving space on the server.
+
+
